@@ -1,0 +1,31 @@
+schemaVersion: v0.4
+prepare:
+  steps: []
+test:
+  steps: []
+run:
+  web:
+    # 101 is the spike installation's Standard plan.
+    plan: 101
+    replicas: 1
+    healthEndpoint: http://localhost:3000/
+    network:
+      ports:
+        - port: 3000
+          isPublic: true
+      paths:
+        - port: 3000
+          path: /
+    steps:
+      - command: python3 web.py
+  api-gateway:
+    plan: 101
+    replicas: 1
+    healthEndpoint: http://localhost:3000/
+    network:
+      ports:
+        - port: 3000
+          isPublic: false
+      paths: []
+    steps:
+      - command: python3 api_gateway.py
