@@ -5,7 +5,7 @@ import os
 import socket
 import urllib.error
 import urllib.request
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 PORT = 3000
 TIMEOUT_SECONDS = 15
@@ -94,4 +94,5 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(page.encode())
 
 
-HTTPServer(("", PORT), Handler).serve_forever()
+# Threaded: a slow call must not hold up health checks or other visitors.
+ThreadingHTTPServer(("", PORT), Handler).serve_forever()
