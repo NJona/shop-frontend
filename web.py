@@ -35,21 +35,36 @@ def api_gateway_url():
     return f"http://ws-server-{os.environ['WORKSPACE_ID']}-api-gateway:{PORT}/"
 
 
+def hop_item(hop):
+    if "error" in hop:
+        return f'<li class="error">{html.escape(hop["error"])}</li>'
+    extra = ""
+    if "prediction" in hop:
+        extra = f' recognized <b>{html.escape(hop["prediction"])}</b>'
+    if "rating" in hop:
+        extra = f' rated it <b>{html.escape(hop["rating"])}</b>'
+    if "backend_url" in hop:
+        extra = (f' <span class="muted">called {html.escape(str(hop["backend_url"]))}'
+                 f' in {hop["elapsed_ms"]} ms</span>')
+    if "called_url" in hop:
+        extra += (f' <span class="muted">called by api-gateway via {html.escape(hop["called_url"])}'
+                  f' in {hop["elapsed_ms"]} ms</span>')
+    return (f'<li><b>{html.escape(hop["app"])}/{html.escape(hop["service"])}</b> in '
+            f'<span class="dc">data center {html.escape(hop["data_center"])}</span>{extra}'
+            f'<br><span class="muted">{html.escape(hop["pod"])}</span></li>')
+
+
 def hop_items(hop):
+    """The call chain in order, then the services api-gateway called besides the backend."""
+    also = []
     while hop:
+        yield hop_item(hop)
         if "error" in hop:
-            yield f'<li class="error">{html.escape(hop["error"])}</li>'
-            return
-        extra = ""
-        if "prediction" in hop:
-            extra = f' recognized <b>{html.escape(hop["prediction"])}</b>'
-        if "backend_url" in hop:
-            extra = (f' <span class="muted">called {html.escape(str(hop["backend_url"]))}'
-                     f' in {hop["elapsed_ms"]} ms</span>')
-        yield (f'<li><b>{html.escape(hop["app"])}/{html.escape(hop["service"])}</b> in '
-               f'<span class="dc">data center {html.escape(hop["data_center"])}</span>{extra}'
-               f'<br><span class="muted">{html.escape(hop["pod"])}</span></li>')
+            break
+        also += hop.get("also", [])
         hop = hop.get("next")
+    for extra in also:
+        yield hop_item(extra)
 
 
 def ask():
