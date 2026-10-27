@@ -43,6 +43,8 @@ def hop_item(hop):
         extra = f' recognized <b>{html.escape(hop["prediction"])}</b>'
     if "rating" in hop:
         extra = f' rated it <b>{html.escape(hop["rating"])}</b>'
+    if "data" in hop:
+        extra += f' <span class="muted">{html.escape(hop["data"])}</span>'
     if "backend_url" in hop:
         extra = (f' <span class="muted">called {html.escape(str(hop["backend_url"]))}'
                  f' in {hop["elapsed_ms"]} ms</span>')
