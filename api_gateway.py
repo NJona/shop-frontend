@@ -10,7 +10,7 @@ import socket
 import time
 import urllib.error
 import urllib.request
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 PORT = 3000
 TIMEOUT_SECONDS = 10
@@ -41,6 +41,10 @@ def call(url):
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        if self.path == "/healthz":  # the health check must not run the whole call chain
+            self.send_response(200)
+            self.end_headers()
+            return
         backend_url = os.environ.get("BACKEND_URL")
         backend, elapsed_ms, ok = call(backend_url)
         body = {
@@ -64,4 +68,5 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(body).encode())
 
 
-HTTPServer(("", PORT), Handler).serve_forever()
+# Threaded: a slow call must not hold up health checks or other visitors.
+ThreadingHTTPServer(("", PORT), Handler).serve_forever()
