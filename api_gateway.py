@@ -8,11 +8,19 @@ import json
 import os
 import socket
 import time
+import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 PORT = 3000
 TIMEOUT_SECONDS = 10
+
+
+def reason_of(error):
+    try:
+        return json.loads(error.read()).get("error", error.reason)
+    except ValueError:
+        return error.reason
 
 
 def call(url):
@@ -22,6 +30,9 @@ def call(url):
         with urllib.request.urlopen(url, timeout=TIMEOUT_SECONDS) as response:
             answer = json.loads(response.read())
         ok = True
+    except urllib.error.HTTPError as error:  # e.g. the maintenance page during a migration says why
+        answer = {"error": f"HTTP {error.code}: {reason_of(error)}"}
+        ok = False
     except Exception as error:  # the page shows why the call failed
         answer = {"error": f"{type(error).__name__}: {error}"}
         ok = False
